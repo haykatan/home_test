@@ -128,24 +128,25 @@ spec:
     }
   
 
-stage('Send build result to Logstash') {
-  when {
-    expression { true }
-  }
-  steps {
-    container('curl') {
-      sh '''
-        curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
-          -H "Content-Type: application/json" \
-          -d '{
-            "@timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",
-            "build_success": '"$( [ "${currentBuild.currentResult}" = "SUCCESS" ] && echo true || echo false )"',
-            "build_number": '"${BUILD_NUMBER}"'
-          }'
-      '''
+
+}
+post {
+  always {
+    script {
+      httpRequest(
+        httpMode: 'POST',
+        url: 'http://logstash-logstash.logstash.svc.cluster.local:8080',
+        contentType: 'APPLICATION_JSON',
+        requestBody: """
+        {
+          "@timestamp": "${new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC'))}",
+          "build_success": ${currentBuild.currentResult == 'SUCCESS'},
+          "build_number": ${env.BUILD_NUMBER}
+        }
+        """
+      )
     }
   }
 }
 
-}
 }
