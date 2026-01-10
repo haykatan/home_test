@@ -130,7 +130,7 @@ spec:
 
 post {
   always {
-    container('curl') {
+    container('jnlp') {
       sh '''
         curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
           -H "Content-Type: application/json" \
