@@ -126,7 +126,7 @@ spec:
         }
       }
     }
-  }
+  
 
   stage('Send build result to Logstash') {
     steps {
@@ -143,5 +143,5 @@ spec:
       }
     }
   }
-
+  }
 }
