@@ -17,7 +17,7 @@ spec:
         - name: HARBOR_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: my-harbor-core
+              name: harbor-core
               key: HARBOR_ADMIN_PASSWORD
       command:
         - dockerd
