@@ -128,35 +128,22 @@ spec:
     }
   }
 
-post {
-  always {
-    script {
-      container('docker') {
-        def status = currentBuild.currentResult ?: "UNKNOWN"
-        def success = (status == "SUCCESS") ? "true" : "false"
-
-        sh """
-          set +e
-          until docker info >/dev/null 2>&1; do
-            echo "Waiting for Docker daemon..."
-            sleep 2
-          done
-
-          docker run --rm curlimages/curl:8.6.0 \
-            curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
-              -H "Content-Type: application/json" \
-              -d '{
-                "@timestamp": "'"\$(date -u +%Y-%m-%dT%H:%M:%SZ)"'" ,
-                "build_success": ${success},
-                "build_number": ${BUILD_NUMBER},
-                "job": "'"${JOB_NAME}"'",
-                "status": "'"${status}"'",
-                "node": "'"${NODE_NAME}"'"
-              }' || true
-        """
-      }
+stage('Send build result to Logstash') {
+  when {
+    always()
+  }
+  steps {
+    container('curl') {
+      sh '''
+        curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
+          -H "Content-Type: application/json" \
+          -d '{
+            "@timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",
+            "build_success": '"$( [ "${currentBuild.currentResult}" = "SUCCESS" ] && echo true || echo false )"',
+            "build_number": '"${BUILD_NUMBER}"'
+          }'
+      '''
     }
   }
 }
-
 }
