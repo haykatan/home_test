@@ -147,3 +147,4 @@ stage('Send build result to Logstash') {
   }
 }
 }
+}
