@@ -53,41 +53,42 @@ spec:
       }
     }
 
-    stage('Build & Test INSIDE Docker') {
-      steps {
-        container('docker') {
-          sh '''
-            until docker info >/dev/null 2>&1; do
-              echo "Waiting for Docker daemon..."
-              sleep 2
-            done
-            cd curl
-            docker run --rm \
-              -u 0:0 \
-              -v /home/jenkins/agent/workspace/test2/curl:/usr/src \
-              -w /usr/src \
-              curl-ci:latest \
-              bash -eux -c "
-                apt-get update &&
-                apt-get install -y --no-install-recommends \
-                  pkg-config \
-                  libssl-dev \
-                  libpsl-dev \
-                  ca-certificates &&
-            
-                autoreconf -fi &&
-                ./configure --with-openssl &&
-                make -j4 &&
-                make test
-              "
+stage('Build & Test INSIDE Docker') {
+  steps {
+    container('docker') {
+      sh '''
+        until docker info >/dev/null 2>&1; do
+          echo "Waiting for Docker daemon..."
+          sleep 2
+        done
 
-          '''
-        }
-      }
+        docker run --rm \
+          -u 0:0 \
+          -v "${WORKSPACE}/curl:/usr/src" \
+          -w /usr/src \
+          curl-ci:latest \
+          bash -eux -c "
+            apt-get update &&
+            apt-get install -y --no-install-recommends \
+              autoconf \
+              automake \
+              libtool \
+              pkg-config \
+              libssl-dev \
+              libpsl-dev \
+              ca-certificates &&
+
+            ls -la &&
+            autoreconf -fi &&
+            ./configure --with-openssl &&
+            make -j4 &&
+            make test
+          "
+      '''
     }
-
   }
-
+}
+  }
 post {
   always {
     script {
