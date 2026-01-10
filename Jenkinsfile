@@ -128,20 +128,21 @@ spec:
     }
   
 
-  stage('Send build result to Logstash') {
-    steps {
-      container('curl') {
-        sh '''
-          curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
-            -H "Content-Type: application/json" \
-            -d '{
-              "@timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",
-              "build_success": '"$( [ "${currentBuild.currentResult}" = "SUCCESS" ] && echo true || echo false )"',
-              "build_number": '"${BUILD_NUMBER}"'
-            }'
-        '''
-      }
-    }
+stage('Send build result to Logstash') {
+  when {
+    always()
   }
+  steps {
+    container('curl') {
+      sh '''
+        curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
+          -H "Content-Type: application/json" \
+          -d '{
+            "@timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",
+            "build_success": '"$( [ "${currentBuild.currentResult}" = "SUCCESS" ] && echo true || echo false )"',
+            "build_number": '"${BUILD_NUMBER}"'
+          }'
+      '''
+    }
   }
 }
