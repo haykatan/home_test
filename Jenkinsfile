@@ -133,20 +133,27 @@ spec:
 post {
   always {
     script {
-      httpRequest(
-        httpMode: 'POST',
-        url: 'http://logstash-logstash.logstash.svc.cluster.local:8080',
-        contentType: 'APPLICATION_JSON',
-        requestBody: """
-        {
-          "@timestamp": "${new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC'))}",
-          "build_success": ${currentBuild.currentResult == 'SUCCESS'},
-          "build_number": ${env.BUILD_NUMBER}
-        }
-        """
-      )
+        container('docker') {
+      def status = currentBuild.currentResult
+
+      sh """
+        until docker info >/dev/null 2>&1; do
+            echo "Waiting for Docker daemon..."
+            sleep 2
+        done
+        docker run --rm curlimages/curl:8.6.0 \
+          curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
+          -H "Content-Type: application/json" \
+          -d '{
+            "job": "${env.JOB_NAME}",
+            "build": ${env.BUILD_NUMBER},
+            "status": "${status}",
+            "node": "${env.NODE_NAME}",
+            "timestamp": "'\$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+          }' || true
+      """
+    }
     }
   }
 }
-
 }
