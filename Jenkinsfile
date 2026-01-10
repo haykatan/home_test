@@ -130,7 +130,7 @@ spec:
 
 stage('Send build result to Logstash') {
   when {
-    always()
+    expression { true }
   }
   steps {
     container('curl') {
@@ -146,5 +146,6 @@ stage('Send build result to Logstash') {
     }
   }
 }
+
 }
 }
