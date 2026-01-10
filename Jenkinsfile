@@ -132,20 +132,15 @@ post {
   always {
     script {
       node {
-        container('docker') {
-          sh '''
-            docker run --rm curlimages/curl:8.6.0 \
-              curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
-              -H "Content-Type: application/json" \
-              -d '{
-                "job": "'"${JOB_NAME}"'",
-                "build": '"${BUILD_NUMBER}"',
-                "status": "'"${currentBuild.currentResult}"'",
-                "node": "'"${NODE_NAME}"'",
-                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
-              }' || true
-          '''
-        }
+        sh '''
+          curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
+            -H "Content-Type: application/json" \
+            -d '{
+              "@timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'",
+              "build_success": '"$( [ "${currentBuild.currentResult}" = "SUCCESS" ] && echo true || echo false )"',
+              "build_number": '"${BUILD_NUMBER}"'
+            }'
+        '''
       }
     }
   }
