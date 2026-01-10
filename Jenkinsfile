@@ -25,6 +25,14 @@ spec:
         - --insecure-registry=harbor.jenkins.svc.cluster.local
         - --host=tcp://0.0.0.0:2375
         - --host=unix:///var/run/docker.sock
+
+    - name: curl
+      image: curlimages/curl:8.6.0
+      command:
+        - sh
+        - -c
+        - sleep infinity
+
 """
     }
   }
@@ -120,21 +128,25 @@ spec:
     }
   }
 
-  post {
-    always {
-      container('docker') {
-        sh '''
-          docker run --rm curlimages/curl:8.6.0 \
+post {
+  always {
+    script {
+      try {
+        container('curl') {
+          sh '''
             curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
-            -H "Content-Type: application/json" \
-            -d '{
-              "job": "'"${JOB_NAME}"'",
-              "build": '"${BUILD_NUMBER}"',
-              "status": "'"${currentBuild.currentResult}"'",
-              "node": "'"${NODE_NAME}"'",
-              "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
-            }' || true
-        '''
+              -H "Content-Type: application/json" \
+              -d '{
+                "job": "'"${JOB_NAME}"'",
+                "build": '"${BUILD_NUMBER}"',
+                "status": "'"${currentBuild.currentResult}"'",
+                "node": "'"${NODE_NAME}"'",
+                "timestamp": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+              }' || true
+          '''
+        }
+      } catch (e) {
+        echo "Post step skipped (no agent/container context): ${e}"
       }
     }
   }
