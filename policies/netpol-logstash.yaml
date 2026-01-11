@@ -1,20 +1,26 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: default-deny-all
+  name: logstash-network-policy
   namespace: logstash
 spec:
-  podSelector: {}
-  policyTypes: ["Ingress", "Egress"]
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-dns
-  namespace: logstash
-spec:
-  podSelector: {}
-  policyTypes: ["Egress"]
+  podSelector: {}   
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jenkins
+      ports:
+        - protocol: TCP
+          port: 8080
+
+    - from:
+        - podSelector: {}
+
   egress:
     - to:
         - namespaceSelector:
@@ -24,58 +30,61 @@ spec:
             matchLabels:
               k8s-app: kube-dns
       ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-intra-namespace
-  namespace: logstash
-spec:
-  podSelector: {}
-  policyTypes: ["Ingress", "Egress"]
-  ingress:
-    - from:
-        - podSelector: {}
-  egress:
-    - to:
-        - podSelector: {}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-logstash-from-jenkins-8080
-  namespace: logstash
-spec:
-  podSelector:
-    matchLabels:
-      app: logstash
-  policyTypes: ["Ingress"]
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: jenkins
-      ports:
-        - port: 8080
-          protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-egress-to-elasticsearch-9200
-  namespace: logstash
-spec:
-  podSelector: {}
-  policyTypes: ["Egress"]
-  egress:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: elastic
       ports:
-        - port: 9200
-          protocol: TCP
+        - protocol: TCP
+          port: 9200
+    - to:
+        - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-logstash-from-jenkins-agents
+  namespace: logstash
+spec:
+  podSelector:
+    matchLabels:
+      app: logstash
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jenkins
+          podSelector:
+            matchLabels:
+              jenkins/jenkins-jenkins-agent: "true"
+      ports:
+        - protocol: TCP
+          port: 8080
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-logstash-from-jenkins-controller
+  namespace: logstash
+spec:
+  podSelector:
+    matchLabels:
+      app: logstash
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: jenkins
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: jenkins-controller
+      ports:
+        - protocol: TCP
+          port: 8080

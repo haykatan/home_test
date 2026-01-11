@@ -1,0 +1,253 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: jenkins
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: controller-allow-ui
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: jenkins-controller
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jenkins-egress-world-only
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: jenkins-controller
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress: []
+
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jenkins-agent-egress-world-only
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      jenkins/jenkins-jenkins-agent: "true"
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress: []
+
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-full-intra-namespace
+  namespace: jenkins
+spec:
+  podSelector: {}   
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        - podSelector: {}  
+
+  egress:
+    - to:
+        - podSelector: {} 
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: jenkins
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kube-api
+  namespace: jenkins
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.43.0.1/32   
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-egress-github
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      jenkins/jenkins-jenkins-agent: "true"
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: jenkins-agent-egress-github
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      jenkins/jenkins-jenkins-agent: "true"
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-allow-internet
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      jenkins/jenkins-jenkins-agent: "true"
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: agent-allow-to-logstash
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      jenkins/jenkins-jenkins-agent: "true"
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: logstash
+          podSelector:
+            matchLabels:
+              app: logstash
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: controller-allow-to-logstash
+  namespace: jenkins
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: jenkins-controller
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: logstash
+          podSelector:
+            matchLabels:
+              app: logstash
+      ports:
+        - protocol: TCP
+          port: 8080

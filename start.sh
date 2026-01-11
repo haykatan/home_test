@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ansible-playbook create_namespaces.yml
-ansible-playbook install_helm.yml
 ansible-playbook apply_policies.yml
+ansible-playbook install_helm.yml
 
 NAMESPACE=elastic
 SVC=kibana-kibana
