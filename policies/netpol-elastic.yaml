@@ -98,25 +98,7 @@ spec:
           protocol: TCP
         - port: 443
           protocol: TCP
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-elasticsearch-ingress-from-kibana-9200
-  namespace: elastic
-spec:
-  podSelector:
-    matchLabels:
-      app: elasticsearch
-  policyTypes: ["Ingress"]
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: kibana
-      ports:
-        - port: 9200
-          protocol: TCP
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
