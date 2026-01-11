@@ -1,0 +1,93 @@
+---
+- name: Install Helm charts on Kubernetes
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    source_namespace: elastic
+    target_namespace: logstash
+    secrets_to_copy:
+      - elasticsearch-master-certs
+      - elasticsearch-master-credentials
+    helm_charts:
+      - name: elasticsearch
+        chart_ref: elastic/elasticsearch
+        release_namespace: elastic
+        # values_file: values/elastic-value.yaml
+    helm:
+      - name: logstash
+        chart_ref: elastic/logstash
+        release_namespace: logstash
+        values_file: values/logstash-values.yaml
+
+      - name: kibana
+        chart_ref: elastic/kibana
+        release_namespace: elastic
+        values_file: values/kibana-values.yaml
+
+      - name: jenkins
+        chart_ref: jenkinsci/jenkins
+        release_namespace: jenkins
+        values_file: values/jenkins-values.yaml
+
+      - name: harbor
+        chart_ref: harbor/harbor
+        release_namespace: jenkins
+        values_file: values/harbor-values.yaml
+  tasks:
+    - name: Add Helm repositories
+      kubernetes.core.helm_repository:
+        name: "{{ item.name }}"
+        repo_url: "{{ item.repo }}"
+      loop:
+        - { name: elastic, repo: https://helm.elastic.co }
+        - { name: jenkins, repo: https://charts.jenkins.io }
+        - { name: harbor,  repo: https://helm.goharbor.io }
+
+    - name: Install / Upgrade Helm charts
+      kubernetes.core.helm:
+        name: "{{ item.name }}"
+        chart_ref: "{{ item.chart_ref }}"
+        release_namespace: "{{ item.release_namespace }}"
+        create_namespace: true
+        wait: true
+        timeout: 10m
+        state: present
+      loop: "{{ helm_charts }}"
+
+
+    - name: Read secrets from source namespace
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ item }}"
+        namespace: "{{ source_namespace }}"
+      loop: "{{ secrets_to_copy }}"
+      register: source_secrets
+
+    - name: Create secrets in target namespace
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: "{{ item.resources[0].metadata.name }}"
+            namespace: "{{ target_namespace }}"
+          type: "{{ item.resources[0].type }}"
+          data: "{{ item.resources[0].data }}"
+      loop: "{{ source_secrets.results }}"
+
+    - name: Install / Upgrade Helm charts
+      kubernetes.core.helm:
+        name: "{{ item.name }}"
+        chart_ref: "{{ item.chart_ref }}"
+        release_namespace: "{{ item.release_namespace }}"
+        values_files:
+          - "{{ item.values_file }}"
+        create_namespace: true
+        wait: true
+        timeout: 10m
+        state: present
+      loop: "{{ helm }}"

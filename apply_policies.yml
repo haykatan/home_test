@@ -1,0 +1,15 @@
+---
+- name: Apply Kubernetes NetworkPolicies from local YAML files
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    policy_dir: "./policies"
+
+  tasks:
+    - name: Apply all policy YAML files
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ item }}"
+      loop: "{{ lookup('fileglob', policy_dir + '/*.yaml', wantlist=True) }}"
