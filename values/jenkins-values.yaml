@@ -38,7 +38,7 @@ controller:
                         stage('Create jobs') {
                           jobDsl(
                             scriptText: '''
-                              pipelineJob("CURL pipeline") {
+                              pipelineJob("Curl pipeline") {
                                 definition {
                                   cpsScm {
                                     scm {
