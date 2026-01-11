@@ -130,30 +130,55 @@ spec:
 
 
 }
+// post {
+//   always {
+//     script {
+//         container('docker') {
+//       def status = currentBuild.currentResult
+
+//       sh """
+//         until docker info >/dev/null 2>&1; do
+//             echo "Waiting for Docker daemon..."
+//             sleep 2
+//         done
+//         docker run --rm curlimages/curl:8.6.0 \
+//           curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
+//           -H "Content-Type: application/json" \
+//           -d '{
+//             "job": "${env.JOB_NAME}",
+//             "build": ${env.BUILD_NUMBER},
+//             "status": "${status}",
+//             "node": "${env.NODE_NAME}",
+//             "timestamp": "'\$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+//           }' || true
+//       """
+//     }
+//     }
+//   }
+// }
+
 post {
   always {
     script {
-        container('docker') {
       def status = currentBuild.currentResult
 
-      sh """
-        until docker info >/dev/null 2>&1; do
-            echo "Waiting for Docker daemon..."
-            sleep 2
-        done
-        docker run --rm curlimages/curl:8.6.0 \
-          curl -s -X POST http://logstash-logstash.logstash.svc.cluster.local:8080 \
-          -H "Content-Type: application/json" \
-          -d '{
-            "job": "${env.JOB_NAME}",
-            "build": ${env.BUILD_NUMBER},
-            "status": "${status}",
-            "node": "${env.NODE_NAME}",
-            "timestamp": "'\$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-          }' || true
-      """
-    }
+      def payload = [
+        job       : env.JOB_NAME,
+        build     : env.BUILD_NUMBER as Integer,
+        status    : status,
+        node      : env.NODE_NAME,
+        timestamp : new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("UTC"))
+      ]
+
+      httpRequest(
+        httpMode: 'POST',
+        url: 'http://logstash-logstash.logstash.svc.cluster.local:8080',
+        contentType: 'APPLICATION_JSON',
+        requestBody: groovy.json.JsonOutput.toJson(payload),
+        validResponseCodes: '100:599' // שלא יפיל את הבילד
+      )
     }
   }
 }
+
 }
