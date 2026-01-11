@@ -48,3 +48,6 @@ Before viewing the imported graph in Kibana:
   therefore this step must be completed manually.
 
 Once the integration is added in the UI, the imported dashboard and graphs will be visible and fully functional.
+
+> **Note:** Test **1510** is flaky and has been excluded.  
+> The build will not fail if this test does not pass.

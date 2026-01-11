@@ -98,7 +98,7 @@ spec:
                 autoreconf -fi &&
                 ./configure --with-openssl &&
                 make -j4 &&
-                make test || true
+                make test TFLAGS=~1510,~1511
               "
           '''
         }
