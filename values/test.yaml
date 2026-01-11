@@ -188,7 +188,7 @@ metadata:
   name: allow-egress-to-kube-apiserver
   namespace: elastic
 spec:
-  podSelector: {}   # כל הפודים ב-namespace
+  podSelector: {}   
   policyTypes:
     - Egress
   egress:

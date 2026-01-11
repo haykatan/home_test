@@ -1,6 +1,6 @@
 expose:
-  type: clusterIP   # 🔒 פנימי בלבד
+  type: clusterIP   
   tls:
-    enabled: false  # בלי TLS חיצוני
+    enabled: false  
 
 externalURL: http://harbor.harbor.svc.cluster.local
