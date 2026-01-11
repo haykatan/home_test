@@ -14,7 +14,6 @@
       - name: elasticsearch
         chart_ref: elastic/elasticsearch
         release_namespace: elastic
-        # values_file: values/elastic-value.yaml
     helm:
       - name: logstash
         chart_ref: elastic/logstash
