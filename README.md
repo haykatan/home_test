@@ -46,6 +46,7 @@ Before viewing the imported graph in Kibana:
   however, it **does not appear automatically in the Kibana UI**.
 * At the moment, no automated method was found to register this integration in the UI,
   therefore this step must be completed manually.
+> **Jenkins Status** refers to the table I added in Kibana.
 
 Once the integration is added in the UI, the imported dashboard and graphs will be visible and fully functional.
 
