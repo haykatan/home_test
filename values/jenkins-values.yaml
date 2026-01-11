@@ -1,8 +1,10 @@
 controller:
-  service:
-    type: LoadBalancer
-    port: 8080
-    targetPort: 8080
+  serviceEnabled: true
+  serviceType: LoadBalancer
+
+  servicePort: 8080
+  targetPort: 8080
+
 
   installPlugins:
     - configuration-as-code:latest
